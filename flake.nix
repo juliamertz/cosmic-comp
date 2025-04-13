@@ -70,7 +70,7 @@
               seatd # For libseat
               libxkbcommon
               libinput
-              mesa # For libgbm
+              libgbm
               fontconfig
               stdenv.cc.cc.lib
               pixman
