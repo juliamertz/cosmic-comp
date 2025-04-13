@@ -88,8 +88,10 @@
 
     (modifiers: [Super], key: "m"): Maximize,
     (modifiers: [Super], key: "F11"): Fullscreen,
-    (modifiers: [Super], key: "r"): Resizing(Outwards),
-    (modifiers: [Super, Shift], key: "r"): Resizing(Inwards),
+    (modifiers: [Super, Alt], key: "h"): Resize(Left),
+    (modifiers: [Super, Alt], key: "j"): Resize(Bottom),
+    (modifiers: [Super, Alt], key: "k"): Resize(Top),
+    (modifiers: [Super, Alt], key: "l"): Resize(Right),
 
     (modifiers: [Super], key: "equal"): ZoomIn,
     (modifiers: [Super], key: "minus"): ZoomOut,
