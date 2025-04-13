@@ -14,8 +14,11 @@ use crate::{
 use cosmic_comp_config::{workspace::WorkspaceLayout, TileBehavior};
 use cosmic_config::ConfigSet;
 use cosmic_settings_config::shortcuts;
-use cosmic_settings_config::shortcuts::action::{Direction, FocusDirection};
+use cosmic_settings_config::shortcuts::action::{
+    Direction, FocusDirection, ResizeDirection, ResizeEdge,
+};
 use smithay::{
+    desktop::WindowSurfaceType,
     input::{pointer::MotionEvent, Seat},
     utils::{Point, Serial},
 };
@@ -877,6 +880,94 @@ impl State {
                 &self.common.config,
                 self.common.event_loop_handle.clone(),
             ),
+
+            Action::Resize(direction) => {
+                let mut shell = self.common.shell.write().unwrap();
+                let Some(focused) = seat.get_keyboard().unwrap().current_focus() else {
+                    return;
+                };
+                // TODO: make this configurable?
+                const RESIZE_AMOUNT: i32 = 100;
+                const EDGE_BUFFER: i32 = 100;
+
+                if let Some(output) = seat.focused_output() {
+                    // Get the window's geometry to determine which edge to resize
+                    let workspace = shell.active_space(&output).unwrap();
+                    let Some(toplevel) = focused.toplevel() else {
+                        return;
+                    };
+                    let Some(mapped) = workspace
+                        .mapped()
+                        .find(|m| m.has_surface(&toplevel, WindowSurfaceType::TOPLEVEL))
+                    else {
+                        return;
+                    };
+                    let Some(window_geo) = workspace.element_geometry(mapped) else {
+                        return;
+                    };
+                    let output_geo = output.geometry();
+
+                    // HACK: using an arbitrary value like 100 as a buffer to detect if a window is
+                    // at the edge works for most cases, but not all. might be worth checking if we
+                    // can get the position of a window within the context of the layout?
+                    // ...otherwise we could just use the gap size config option to guesstimate
+                    // i see now why they didn't include this behaviour by default
+                    let (edge, resize_direction) = match direction {
+                        Direction::Left => {
+                            if window_geo.loc.x <= EDGE_BUFFER {
+                                (ResizeEdge::Right, ResizeDirection::Inwards)
+                            } else {
+                                (ResizeEdge::Left, ResizeDirection::Outwards)
+                            }
+                        }
+                        Direction::Right => {
+                            if window_geo.loc.x + window_geo.size.w
+                                >= output_geo.size.w - EDGE_BUFFER
+                            {
+                                (ResizeEdge::Left, ResizeDirection::Inwards)
+                            } else {
+                                (ResizeEdge::Right, ResizeDirection::Outwards)
+                            }
+                        }
+                        Direction::Up => {
+                            if window_geo.loc.y <= EDGE_BUFFER {
+                                (ResizeEdge::Bottom, ResizeDirection::Inwards)
+                            } else {
+                                (ResizeEdge::Top, ResizeDirection::Outwards)
+                            }
+                        }
+                        Direction::Down => {
+                            if window_geo.loc.y + window_geo.size.h
+                                >= output_geo.size.h - EDGE_BUFFER
+                            {
+                                (ResizeEdge::Top, ResizeDirection::Inwards)
+                            } else {
+                                (ResizeEdge::Bottom, ResizeDirection::Outwards)
+                            }
+                        }
+                    };
+
+                    if shell
+                        .workspaces
+                        .sets
+                        .get_mut(&output)
+                        .unwrap()
+                        .sticky_layer
+                        .resize(
+                            &focused,
+                            resize_direction,
+                            edge.clone().into(),
+                            RESIZE_AMOUNT,
+                        )
+                    {
+                        return;
+                    }
+                    if let Some(workspace) = shell.active_space_mut(&output) {
+                        workspace.resize(&focused, resize_direction, edge.into(), RESIZE_AMOUNT);
+                    }
+                }
+            }
+
             // NOTE: implementation currently assumes actions that apply to outputs should apply to the active output
             // rather than the output that has keyboard focus
             Action::ToggleOrientation => {
