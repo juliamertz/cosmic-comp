@@ -110,6 +110,12 @@
 
             # include build inputs
             inputsFrom = [ cosmic-comp ];
+            packages = with rust-toolchain.availableComponents; [
+              rust-src
+              rust-analyzer
+              rustfmt
+              clippy
+            ];
           };
         };
     };
