@@ -931,7 +931,7 @@ impl State {
             ),
 
             Action::Resize(direction) => {
-                let mut shell = self.common.shell.write().unwrap();
+                let mut shell = self.common.shell.write();
                 let Some(focused) = seat.get_keyboard().unwrap().current_focus() else {
                     return;
                 };
