@@ -25,7 +25,7 @@ cosmic-protocols = { git = "https://github.com/pop-os/cosmic-protocols", rev = "
     "server",
 ] }
 cosmic-settings-config = { git = "https://github.com/pop-os/cosmic-settings-daemon" }
-cosmic-settings-daemon-config = { git = "https://github.com/pop-os/cosmic-settings-daemon", features = [
+cosmic-settings-daemon-config = { git = "https://github.com/juliamertz/cosmic-settings-daemon", features = [
     "greeter",
 ] }
 cosmic-text = { git = "https://github.com/pop-os/cosmic-text.git", features = [
